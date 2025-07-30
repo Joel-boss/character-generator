@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot Character Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            padding: 30px;
+            text-align: center;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+            box-shadow: 0 4px 15px rgba(252, 182, 159, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(252, 182, 159, 0.6);
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .output {
+            background: #f8f9fa;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 400px;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            overflow-y: auto;
+        }
+
+        .lorebook-entry {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .lorebook-key {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .lorebook-content {
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f1f3f4;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+
+        .character-name-input {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .character-name-input:focus {
+            border-color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 AI Chatbot Character Generator</h1>
+            <p>Create unique, detailed characters with random traits and personalities</p>
+        </div>
+
+        <div class="controls">
+            <input type="text" id="characterName" class="character-name-input" placeholder="Enter character name (optional)">
+            <button class="btn" onclick="generateCharacter()">Generate Character</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard()">Copy All</button>
+            <button class="btn btn-secondary" onclick="exportJSON()">Export JSON</button>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('character')">Character</button>
+                    <button class="tab" onclick="switchTab('lorebook')">Lorebook</button>
+                    <button class="tab" onclick="switchTab('scenarios')">Scenarios</button>
+                </div>
+
+                <div id="character-tab" class="tab-content active">
+                    <h2>Character Profile</h2>
+                    <div id="characterOutput" class="output">Click "Generate Character" to create a new character!</div>
+                </div>
+
+                <div id="lorebook-tab" class="tab-content">
+                    <h2>Lorebook Entries</h2>
+                    <div id="lorebookOutput" class="output">Lorebook entries will appear here...</div>
+                </div>
+
+                <div id="scenarios-tab" class="tab-content">
+                    <h2>Starting Scenarios</h2>
+                    <div id="scenariosOutput" class="output">Starting scenarios will appear here...</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Generation Options</h2>
+                <div style="display: grid; gap: 15px;">
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="includeAppearance" checked>
+                        Include detailed appearance
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="includeLorebook" checked>
+                        Generate lorebook entries
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="includeScenarios" checked>
+                        Generate starting scenarios
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="fantasyMode">
+                        Fantasy/Supernatural mode
+                    </label>
+                </div>
+                
+                <h3 style="margin-top: 25px; margin-bottom: 15px;">Quick Actions</h3>
+                <div style="display: grid; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="generateRomantic()">Romantic Character</button>
+                    <button class="btn btn-secondary" onclick="generateMentor()">Mentor Character</button>
+                    <button class="btn btn-secondary" onclick="generateAntagonist()">Antagonist Character</button>
+                    <button class="btn btn-secondary" onclick="generateFantasy()">Fantasy Character</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const data = {
+            sunSigns: ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'],
+            moonSigns: ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'],
+            mbtiTypes: ['ENFP', 'INFP', 'ENFJ', 'INFJ', 'ENTP', 'INTP', 'ENTJ', 'INTJ', 'ESFP', 'ISFP', 'ESFJ', 'ISFJ', 'ESTP', 'ISTP', 'ESTJ', 'ISTJ'],
+            attachmentStyles: ['Secure', 'Anxious-Preoccupied', 'Dismissive-Avoidant', 'Fearful-Avoidant'],
+            loveLanguages: ['Words of Affirmation', 'Physical Touch', 'Acts of Service', 'Quality Time', 'Receiving Gifts'],
+            motivations: [
+                'Seeking redemption for past mistakes',
+                'Protecting loved ones at all costs',
+                'Uncovering hidden truths',
+                'Achieving recognition and status',
+                'Finding their true purpose',
+                'Overcoming a deep-seated fear',
+                'Proving their worth to others',
+                'Creating something meaningful',
+                'Breaking free from expectations',
+                'Healing from past trauma'
+            ],
+            writingStyles: [
+                'Poetic and metaphorical',
+                'Direct and straightforward',
+                'Witty and sarcastic',
+                'Formal and eloquent',
+                'Casual and conversational',
+                'Dramatic and intense',
+                'Mysterious and cryptic',
+                'Warm and nurturing',
+                'Clinical and analytical',
+                'Playful and whimsical'
+            ],
+            speechStyles: [
+                'Speaks in short, clipped sentences',
+                'Uses elaborate, flowery language',
+                'Peppers speech with technical jargon',
+                'Often speaks in questions',
+                'Uses lots of pop culture references',
+                'Speaks softly, almost whispering',
+                'Has a tendency to ramble',
+                'Uses old-fashioned expressions',
+                'Switches between languages',
+                'Speaks with dramatic pauses'
+            ],
+            backgrounds: [
+                'Former military officer turned civilian',
+                'Successful artist with a mysterious past',
+                'Scholar who gave up academia',
+                'Street-smart survivor from the city',
+                'Nobility who rejected their birthright',
+                'Self-made entrepreneur',
+                'Reformed criminal seeking a new life',
+                'Traveling performer and storyteller',
+                'Healer who lost their faith',
+                'Technology expert living off-grid'
+            ],
+            appearances: {
+                height: ['petite', 'average height', 'tall', 'very tall', 'compact'],
+                build: ['slender', 'athletic', 'curvy', 'muscular', 'lean', 'stocky', 'willowy'],
+                hair: ['short black hair', 'long auburn hair', 'curly brown hair', 'straight blonde hair', 'silver-streaked hair', 'wild red hair', 'braided dark hair'],
+                eyes: ['piercing blue eyes', 'warm brown eyes', 'striking green eyes', 'deep hazel eyes', 'mysterious gray eyes', 'bright amber eyes'],
+                features: ['sharp cheekbones', 'gentle features', 'expressive eyebrows', 'a warm smile', 'distinctive scars', 'delicate hands', 'strong jawline']
+            },
+            personalities: [
+                'Fiercely independent but secretly craves connection',
+                'Outwardly confident but plagued by self-doubt',
+                'Gentle and nurturing with hidden steel',
+                'Cynical exterior hiding a romantic heart',
+                'Intellectual and logical but emotionally intuitive',
+                'Rebellious spirit with a strong moral compass',
+                'Charming and social but values solitude',
+                'Seemingly carefree but deeply thoughtful',
+                'Protective and loyal to a fault',
+                'Ambitious and driven yet surprisingly vulnerable'
+            ],
+            skills: [
+                'Master of disguise and infiltration',
+                'Exceptional memory and attention to detail',
+                'Natural leadership and tactical thinking',
+                'Skilled in multiple forms of combat',
+                'Genius-level intellect and problem-solving',
+                'Charismatic speaker and negotiator',
+                'Artistic talent and creative vision',
+                'Empathic abilities and emotional intelligence',
+                'Technical expertise and innovation',
+                'Survival skills and adaptability'
+            ],
+            quirks: [
+                'Always carries a lucky charm',
+                'Has an unusual collection (vintage postcards, bottle caps, etc.)',
+                'Speaks to animals as if they understand',
+                'Never breaks promises, no matter how small',
+                'Has a signature gesture when thinking',
+                'Refuses to use certain modern technology',
+                'Always knows exactly what time it is',
+                'Can\'t sleep without background noise',
+                'Remembers everyone\'s birthday',
+                'Has an irrational fear of butterflies'
+            ],
+            emotions: {
+                anger: [
+                    'Becomes deadly quiet and calculating',
+                    'Erupts in passionate outbursts',
+                    'Uses cutting sarcasm as a weapon',
+                    'Withdraws completely until they cool down',
+                    'Channels rage into productive action'
+                ],
+                sad: [
+                    'Seeks solitude to process emotions',
+                    'Becomes clingy and needs reassurance',
+                    'Throws themselves into work or hobbies',
+                    'Opens up to trusted friends',
+                    'Uses humor to mask their pain'
+                ],
+                embarrassed: [
+                    'Blushes and becomes tongue-tied',
+                    'Makes self-deprecating jokes',
+                    'Becomes defensive and argumentative',
+                    'Tries to change the subject quickly',
+                    'Freezes up completely'
+                ],
+                afraid: [
+                    'Faces fears head-on despite terror',
+                    'Becomes paralyzed by overthinking',
+                    'Seeks comfort from others',
+                    'Uses logic to rationalize fears',
+                    'Becomes hypervigilant and jumpy'
+                ],
+                happy: [
+                    'Radiates infectious joy to everyone',
+                    'Becomes more generous and giving',
+                    'Expresses through creative outlets',
+                    'Shares excitement through storytelling',
+                    'Shows quiet, contented satisfaction'
+                ],
+                desire: [
+                    'Pursues goals with single-minded focus',
+                    'Becomes surprisingly vulnerable and open',
+                    'Plans elaborate schemes to achieve wants',
+                    'Expresses through subtle hints and gestures',
+                    'Becomes impulsive and takes risks'
+                ]
+            }
+        };
+
+        let currentCharacter = null;
+
+        function random(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`.tab:nth-child(${tabName === 'character' ? 1 : tabName === 'lorebook' ? 2 : 3})`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function generateCharacter() {
+            const characterName = document.getElementById('characterName').value || generateRandomName();
+            const includeAppearance = document.getElementById('includeAppearance').checked;
+            const includeLorebook = document.getElementById('includeLorebook').checked;
+            const includeScenarios = document.getElementById('includeScenarios').checked;
+            const fantasyMode = document.getElementById('fantasyMode').checked;
+
+            const skill1 = random(data.skills);
+            const skill2 = random(data.skills.filter(s => s !== skill1));
+            const quirk1 = random(data.quirks);
+            const quirk2 = random(data.quirks.filter(q => q !== quirk1));
+
+            const character = {
+                name: characterName,
+                summary: generateSummary(characterName, fantasyMode),
+                sunSign: random(data.sunSigns),
+                moonSign: random(data.moonSigns),
+                mbti: random(data.mbtiTypes),
+                attachmentStyle: random(data.attachmentStyles),
+                loveLanguage: random(data.loveLanguages),
+                motivation: random(data.motivations),
+                writingStyle: random(data.writingStyles),
+                speechStyle: random(data.speechStyles),
+                background: random(data.backgrounds),
+                appearance: includeAppearance ? generateAppearance() : 'Not specified',
+                personality: random(data.personalities),
+                skills: [skill1, skill2],
+                quirks: [quirk1, quirk2],
+                emotions: {
+                    anger: random(data.emotions.anger),
+                    sad: random(data.emotions.sad),
+                    embarrassed: random(data.emotions.embarrassed),
+                    afraid: random(data.emotions.afraid),
+                    happy: random(data.emotions.happy),
+                    desire: random(data.emotions.desire)
+                }
+            };
+
+            currentCharacter = character;
+            displayCharacter(character);
+
+            if (includeLorebook) {
+                generateLorebook(character, fantasyMode);
+            }
+
+            if (includeScenarios) {
+                generateScenarios(character, fantasyMode);
+            }
+        }
+
+        function generateRandomName() {
+            const firstNames = ['Alex', 'Jordan', 'Casey', 'Morgan', 'Riley', 'Sage', 'Phoenix', 'River', 'Ash', 'Quinn'];
+            const lastNames = ['Cross', 'Vale', 'Stone', 'Rivers', 'Moon', 'Fox', 'Gray', 'Storm', 'Knight', 'Blake'];
+            return `${random(firstNames)} ${random(lastNames)}`;
+        }
+
+        function generateSummary(name, fantasyMode) {
+            const templates = fantasyMode ? [
+                `${name} is a mysterious figure with otherworldly abilities`,
+                `${name} is a guardian of ancient secrets and forbidden knowledge`,
+                `${name} is a wanderer between realms, seeking their true destiny`
+            ] : [
+                `${name} is a complex individual navigating modern life with unique challenges`,
+                `${name} is someone whose past shapes their present in unexpected ways`,
+                `${name} is a person of many layers, revealing depth through interaction`
+            ];
+            return random(templates);
+        }
+
+        function generateAppearance() {
+            const height = random(data.appearances.height);
+            const build = random(data.appearances.build);
+            const hair = random(data.appearances.hair);
+            const eyes = random(data.appearances.eyes);
+            const features = random(data.appearances.features);
+            
+            return `${height} with a ${build} build, ${hair}, ${eyes}, and ${features}`;
+        }
+
+        function displayCharacter(character) {
+            const output = `{{char}} Summary:
+${character.summary}
+
+{{char}} Core Influences:
+Horoscope – sun: ${character.sunSign}, moon: ${character.moonSign}
+MBTI – ${character.mbti}
+Attachment Style – ${character.attachmentStyle}
+Love Language – ${character.loveLanguage}
+Motivation – ${character.motivation}
+Writing Style – ${character.writingStyle}
+Speech Style – ${character.speechStyle}
+
+{{char}} Background & Role:
+${character.background}
+
+{{char}} Appearance:
+${character.appearance}
+
+{{char}} Personality:
+${character.personality}
+
+{{char}} Skills:
+• ${character.skills.join('\n• ')}
+
+{{char}} Voice & Quirks:
+• ${character.quirks.join('\n• ')}
+
+{{char}} Emotional Range:
+- Anger: ${character.emotions.anger}
+- Sad: ${character.emotions.sad}
+- Embarrassed: ${character.emotions.embarrassed}
+- Afraid: ${character.emotions.afraid}
+- Happy: ${character.emotions.happy}
+- Desire: ${character.emotions.desire}`;
+
+            document.getElementById('characterOutput').textContent = output;
+        }
+
+        function generateLorebook(character, fantasyMode) {
+            const entries = [];
+            const keys = fantasyMode ? [
+                'ancient magic', 'forgotten realm', 'mystical artifact', 'shadow council',
+                'elemental powers', 'prophecy', 'dragon riders', 'crystal caves'
+            ] : [
+                'childhood home', 'former workplace', 'favorite cafe', 'old mentor',
+                'family tradition', 'secret hobby', 'recurring nightmare', 'prized possession'
+            ];
+
+            for (let i = 0; i < 5; i++) {
+                const key = random(keys);
+                const content = generateLorebookContent(key, character, fantasyMode);
+                entries.push({ key, content });
+            }
+
+            displayLorebook(entries);
+        }
+
+        function generateLorebookContent(key, character, fantasyMode) {
+            const templates = {
+                'ancient magic': `The old ways of magic that ${character.name} learned in secret, forbidden by the current regime.`,
+                'forgotten realm': `A mystical place ${character.name} once visited in dreams, now seeming increasingly real.`,
+                'childhood home': `The place where ${character.name} grew up, filled with memories both bitter and sweet.`,
+                'former workplace': `Where ${character.name} used to work before their life changed dramatically.`,
+                'old mentor': `The person who shaped ${character.name}'s worldview and taught them important lessons.`
+            };
+
+            return templates[key] || `Important information about ${key} that relates to ${character.name}'s story.`;
+        }
+
+        function displayLorebook(entries) {
+            const output = document.getElementById('lorebookOutput');
+            output.innerHTML = '';
+            
+            entries.forEach(entry => {
+                const div = document.createElement('div');
+                div.className = 'lorebook-entry';
+                div.innerHTML = `
+                    <div class="lorebook-key">Key: ${entry.key}</div>
+                    <div class="lorebook-content">${entry.content}</div>
+                `;
+                output.appendChild(div);
+            });
+        }
+
+        function generateScenarios(character, fantasyMode) {
+            const scenarios = fantasyMode ? [
+                `${character.name} discovers an ancient rune glowing in their apartment, responding to their touch.`,
+                `A mysterious stranger approaches ${character.name} claiming they are the key to preventing an otherworldly catastrophe.`,
+                `${character.name} wakes up in a place that shouldn't exist, with memories of a life they've never lived.`
+            ] : [
+                `${character.name} runs into their past at the worst possible moment, forcing them to confront unresolved issues.`,
+                `A chance encounter at a coffee shop leads ${character.name} into an unexpected adventure.`,
+                `${character.name} receives a mysterious message that changes everything they thought they knew about themselves.`
+            ];
+
+            const output = scenarios.map((scenario, i) => `Scenario ${i + 1}:\n${scenario}`).join('\n\n');
+            document.getElementById('scenariosOutput').textContent = output;
+        }
+
+        function generateRomantic() {
+            document.getElementById('fantasyMode').checked = false;
+            document.getElementById('characterName').value = '';
+            generateCharacter();
+        }
+
+        function generateMentor() {
+            document.getElementById('characterName').value = 'Professor ' + generateRandomName().split(' ')[1];
+            generateCharacter();
+        }
+
+        function generateAntagonist() {
+            document.getElementById('characterName').value = generateRandomName();
+            generateCharacter();
+        }
+
+        function generateFantasy() {
+            document.getElementById('fantasyMode').checked = true;
+            document.getElementById('characterName').value = '';
+            generateCharacter();
+        }
+
+        function copyToClipboard() {
+            if (!currentCharacter) {
+                alert('Please generate a character first!');
+                return;
+            }
+
+            const characterText = document.getElementById('characterOutput').textContent;
+            const lorebookText = document.getElementById('lorebookOutput').textContent || '';
+            const scenariosText = document.getElementById('scenariosOutput').textContent || '';
+            
+            const fullText = characterText + '\n\n' + lorebookText + '\n\n' + scenariosText;
+            
+            navigator.clipboard.writeText(fullText).then(() => {
+                alert('Character data copied to clipboard!');
+            });
+        }
+
+        function exportJSON() {
+            if (!currentCharacter) {
+                alert('Please generate a character first!');
+                return;
+            }
+
+            const dataStr = JSON.stringify(currentCharacter, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', `${currentCharacter.name.replace(' ', '_')}_character.json`);
+            link.click();
+        }
+
+        // Generate initial character
+        window.onload = () => {
+            console.log('Page loaded, generating character...');
+            generateCharacter();
+        };
+    </script>
+</body>
+</html>
